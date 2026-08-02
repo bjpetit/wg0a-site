@@ -4,13 +4,92 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>WG0A Ham Radio Software</title>
+    <style>
+      :root {
+        --bg: #f4efe6;
+        --surface: #fffaf0;
+        --ink: #1e2a2f;
+        --muted: #4c5a61;
+        --accent: #2f6f74;
+        --line: #d9ccba;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+        line-height: 1.6;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 8% 12%, #f0d6b6 0, transparent 22%),
+          radial-gradient(circle at 90% 18%, #d6ebe3 0, transparent 20%),
+          var(--bg);
+      }
+
+      main {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 2rem 1rem 3rem;
+      }
+
+      section {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-top: 1rem;
+      }
+
+      .hero {
+        background: linear-gradient(135deg, #f8f0e2, #eaf3ef);
+        border-radius: 14px;
+      }
+
+      h1,
+      h2 {
+        line-height: 1.2;
+      }
+
+      h1 {
+        margin-top: 0;
+        color: #7b341f;
+      }
+
+      h2 {
+        margin-top: 0;
+      }
+
+      p {
+        margin: 0.6rem 0;
+      }
+
+      a {
+        color: var(--accent);
+        font-weight: 600;
+      }
+
+      .badge {
+        display: inline-block;
+        background: #efe1ce;
+        border: 1px solid #cfb89b;
+        border-radius: 999px;
+        padding: 0.2rem 0.6rem;
+        font-size: 0.85rem;
+      }
+    </style>
   </head>
   <body>
     <main>
-      <h1>WG0A Ham Radio Software</h1>
-      <p>
-        This site collects practical notes and setup guides for running ham radio software.
-      </p>
+      <section class="hero">
+        <p class="badge">WG0A documentation</p>
+        <h1>WG0A Ham Radio Software Notes</h1>
+        <p>
+          Practical setup and operations notes for Dire Wolf, ARDOPC, and LinBPQ on Linux systems.
+        </p>
+      </section>
 
       <section>
         <h2>Dire Wolf</h2>
