@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dire Wolf with systemd</title>
+    <style>
+      :root {
+        --bg: #f4efe6;
+        --surface: #fffaf0;
+        --ink: #1e2a2f;
+        --muted: #4c5a61;
+        --accent: #b14f2f;
+        --accent-2: #2f6f74;
+        --line: #d9ccba;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+        line-height: 1.6;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 8% 12%, #f0d6b6 0, transparent 22%),
+          radial-gradient(circle at 90% 18%, #d6ebe3 0, transparent 20%),
+          var(--bg);
+      }
+
+      main {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 2rem 1rem 3rem;
+      }
+
+      .hero {
+        background: linear-gradient(135deg, #f8f0e2, #eaf3ef);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 1.25rem;
+        margin-bottom: 1.25rem;
+      }
+
+      h1,
+      h2,
+      h3 {
+        line-height: 1.2;
+      }
+
+      h1 {
+        margin-top: 0;
+        color: #7b341f;
+      }
+
+      h2 {
+        margin-top: 1.8rem;
+      }
+
+      a {
+        color: var(--accent-2);
+        font-weight: 600;
+      }
+
+      pre,
+      code {
+        font-family: "DejaVu Sans Mono", Menlo, Monaco, monospace;
+      }
+
+      pre {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 0.9rem;
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--surface);
+        border: 1px solid var(--line);
+      }
+
+      th,
+      td {
+        text-align: left;
+        border: 1px solid var(--line);
+        padding: 0.55rem;
+        vertical-align: top;
+      }
+
+      .badge {
+        display: inline-block;
+        background: #efe1ce;
+        border: 1px solid #cfb89b;
+        border-radius: 999px;
+        padding: 0.2rem 0.6rem;
+        font-size: 0.85rem;
+      }
+
+      .callout {
+        background: #eef6f4;
+        border-left: 4px solid var(--accent-2);
+        padding: 0.7rem 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p><a href="index.html">Back to WG0A main page</a></p>
+
+      <section class="hero">
+        <p class="badge">Dire Wolf service management</p>
+        <h1>Use systemd to start and supervise Dire Wolf</h1>
+        <p>
+          This page explains two working systemd unit files and why they are usually a better
+          long-term choice for stability and supportability of running direwolf on a Linux system.
+          The single-instance service is simpler, while the multi-instance template service can be more flexible.
+        </p>
+      </section>
+
+      <section>
+        <h2>Referenced gists</h2>
+        <p>
+          1) Single-instance service:
+          <a href="https://gist.github.com/bjpetit/983d9fc139289752985ac2d97633f3b3">direwolf.service gist</a>
+        </p>
+        <p>
+          2) Multi-instance template service:
+          <a href="https://gist.github.com/bjpetit/0cee2ca37ac97695692c62b2c81fbba2">direwolf@.service gist</a>
+        </p>
+      </section>
+
+      <section>
+        <h2>Supportability and debugability advantages</h2>
+        <p>
+          The biggest day-2 operations win with systemd is that service behavior, health, and logs
+          are all visible through standard tools. This reduces hand-maintained scripts and reduces
+          the amount of "tribal knowledge" needed to support a station over time.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Topic</th>
+              <th>systemd service</th>
+              <th>crontab + script</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Automatic restart</td>
+              <td>Built in (<code>Restart=always</code>, <code>RestartSec=15</code>)</td>
+              <td>Usually custom script logic or no restart</td>
+            </tr>
+            <tr>
+              <td>Boot ordering</td>
+              <td>
+                Explicit dependencies (<code>After=network.target</code>,
+                <code>After=rigctld.service</code>)
+              </td>
+              <td>Harder to guarantee services are available when script runs</td>
+            </tr>
+            <tr>
+              <td>Logging</td>
+              <td><code>journalctl -u ...</code>, built-in history and follow mode</td>
+              <td>Manual redirects, rotating logs, and troubleshooting overhead</td>
+            </tr>
+            <tr>
+              <td>Operational control</td>
+              <td><code>start</code>, <code>stop</code>, <code>status</code>, <code>enable</code></td>
+              <td>Often ad-hoc process management with shell commands and screen attach/detach</td>
+            </tr>
+            <tr>
+              <td>Least privilege</td>
+              <td>Run as non-root user via <code>User=</code> and <code>Group=</code></td>
+              <td>Easy to accidentally run with broader privileges</td>
+            </tr>
+            <tr>
+              <td>Multi-instance support</td>
+              <td>Native with template units like <code>direwolf@.service</code></td>
+              <td>Requires separate scripts and process tracking per instance</td>
+            </tr>
+            <tr>
+              <td>Operator handoff</td>
+              <td>
+                Any operator can run the same standard commands to see status, logs, and restart
+                history.
+              </td>
+              <td>
+                Operators must know the local script path, cron entry, and screen session naming
+                convention.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Option A: Single-instance service</h2>
+        <p>
+          Use this when you have one Dire Wolf config and one running process.
+        </p>
+        <pre><code>[Unit]
+Description=Direwolf Sound Card-based AX.25 TNC
+After=network.target
+After=sound.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/opt/direwolf/
+ExecStart=/usr/local/bin/direwolf -t 1 -a 600 -c direwolf.conf
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target</code></pre>
+      </section>
+
+      <section>
+        <h2>Option B: Multi-instance template service</h2>
+        <p>
+          Use this when you want multiple named Dire Wolf instances with different config files.
+        </p>
+        <pre><code>[Unit]
+Description=Direwolf %i Service
+Documentation=https://github.com/wb2osz/direwolf/blob/dev/doc/README.md
+After=network-online.target
+Wants=rigctld.service
+After=rigctld.service
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/opt/direwolf/
+ExecStart=/usr/local/bin/direwolf -a 200 -qd -c config/direwolf-%i.conf
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target</code></pre>
+        <p>
+          Example: starting <code>direwolf@vhf</code> uses
+          <code>/opt/direwolf/config/direwolf-vhf.conf</code>.
+        </p>
+        <p>
+          Using <code>Wants=rigctld.service</code> makes rigctld optional. Dire Wolf will still
+          start if rigctld is not installed or not enabled.
+        </p>
+      </section>
+
+      <section>
+        <h2>Install and enable</h2>
+        <h3>For single instance</h3>
+        <pre><code>sudo cp direwolf.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now direwolf
+sudo systemctl status direwolf</code></pre>
+
+        <h3>For template instances</h3>
+        <pre><code>sudo cp "direwolf@.service" /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now direwolf@vhf
+sudo systemctl status direwolf@vhf</code></pre>
+      </section>
+
+      <section>
+        <h2>Logs and troubleshooting</h2>
+        <pre><code># Single instance logs
+journalctl -u direwolf -f
+
+# Template instance logs
+journalctl -u direwolf@vhf -f</code></pre>
+        <p class="callout">
+          Keep <code>After=rigctld.service</code> when PTT depends on rigctld. Use
+          <code>Requires=rigctld.service</code> only if you want Dire Wolf startup to fail when
+          rigctld is unavailable.
+        </p>
+      </section>
+
+      <section>
+        <h2>Seeing terminal-style text with journalctl</h2>
+        <p>
+          If you like the colored terminal view from screen, you can keep most of that experience
+          with systemd and journalctl.
+        </p>
+        <pre><code># 1) Keep -t 1 in ExecStart so Dire Wolf emits ANSI color
+ExecStart=/usr/local/bin/direwolf -t 1 -a 600 -c direwolf.conf
+
+# 2) Follow logs in a cleaner, terminal-like format
+journalctl -u direwolf -f -o cat --all
+
+# 3) For template instances
+journalctl -u direwolf@vhf -f -o cat --all</code></pre>
+        <p>
+          If colors do not appear, try <code>--no-pager</code> and confirm your terminal emulator
+          supports ANSI colors.
+        </p>
+      </section>
+
+      <section>
+        <h2>Systemd vs screen session debugging</h2>
+        <p>
+          Running Dire Wolf under screen can work, but debugging typically spans several moving
+          parts: cron invocation, shell script logic, process state, and terminal multiplexing.
+          Systemd centralizes those signals into one service record.
+        </p>
+        <p class="callout">
+          A key supportability advantage: if Dire Wolf exits, the screen session may disappear with
+          the error text that was on screen. With systemd, stdout/stderr is captured in journald
+          and remains available after the process exits.
+        </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Debug task</th>
+                <th>systemd workflow</th>
+                <th>crontab + screen workflow</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Did startup fail?</td>
+                <td>
+                  <code>systemctl status direwolf</code> immediately shows exit code, last logs, and
+                  unit state.
+                </td>
+                <td>
+                  Check cron fired, check script path/permissions, verify screen session exists,
+                  then inspect script output if captured.
+                </td>
+              </tr>
+              <tr>
+                <td>Find recent errors</td>
+                <td>
+                  <code>journalctl -u direwolf --since "-15 min"</code> gives a time-bounded log view.
+                </td>
+                <td>
+                  Need to locate cron logs, shell history, screen scrollback, and any custom log
+                  files.
+                </td>
+              </tr>
+              <tr>
+                <td>Follow live behavior</td>
+                <td><code>journalctl -u direwolf -f</code> is the standard live tail.</td>
+                <td>
+                  Must attach to the correct screen session and detach safely; output can be missed
+                  if the session is recreated.
+                </td>
+              </tr>
+              <tr>
+                <td>Post-crash evidence retention</td>
+                <td>
+                  <code>journalctl -u direwolf --since "-1 hour"</code> preserves crash messages
+                  even after service exit/restart.
+                </td>
+                <td>
+                  If Dire Wolf exits and the screen session terminates, error output can be lost
+                  unless separately redirected to a log file.
+                </td>
+              </tr>
+              <tr>
+                <td>Root-cause restart loops</td>
+                <td>
+                  Restart policy and cadence are explicit in one place
+                  (<code>Restart=always</code>, <code>RestartSec=15</code>).
+                </td>
+                <td>
+                  Restart behavior often buried in script logic, making loops harder to reason about.
+                </td>
+              </tr>
+              <tr>
+                <td>See which command actually started</td>
+                <td>
+                  <code>systemctl show direwolf -p ExecStart,FragmentPath</code> shows exact unit
+                  command and source file.
+                </td>
+                <td>
+                  Need to inspect crontab, then inspect dw-start.sh, then inspect any nested shell
+                  calls from that script.
+                </td>
+              </tr>
+              <tr>
+                <td>Dependency visibility</td>
+                <td>
+                  Unit declares ordering/dependencies with
+                  <code>After=</code>/<code>Wants=</code>/<code>Requires=</code>.
+                </td>
+                <td>
+                  Script usually has implicit assumptions (network, audio, rigctld) with less clear
+                  failure signals.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <pre><code># Fast systemd debug checklist
+        systemctl status direwolf@vhf
+        journalctl -u direwolf@vhf --since "-30 min"
+        journalctl -u direwolf@vhf -f
+        systemctl show direwolf@vhf -p ActiveState,SubState,ExecMainStatus,FragmentPath
+
+        # Equivalent screen-oriented checks often needed for comparison
+        crontab -l
+        screen -ls
+        ps -ef | grep "[d]irewolf"</code></pre>
+          </section>
+
+      <section>
+        <h2>Migrating from @reboot cron and dw-start.sh</h2>
+        <p>
+          Once your systemd unit is working, remove or comment out old
+          <code>@reboot</code> entries that launch Dire Wolf through <code>dw-start.sh</code>. Running
+          both methods together can create duplicate processes and audio/PTT conflicts.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
