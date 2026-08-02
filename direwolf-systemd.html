@@ -128,10 +128,18 @@
         <p class="badge">Dire Wolf service management</p>
         <h1>Use systemd to start and supervise Dire Wolf</h1>
         <p>
-          This page explains two working systemd unit files and why they are usually a better
-          long-term choice for initial deployment, stability, supportability, and debuggability
-          when running Dire Wolf on a Linux system. The single-instance service is simpler, while
-          the multi-instance template service is more flexible.
+          This page shows two practical systemd unit examples for running Dire Wolf on Linux.
+          They are usually easier to support over time than relying on screen or tmux because the
+          service state, logs, and restart behavior are visible through standard tools.
+        </p>
+        <p>
+          Start with the single-instance unit if you have one Dire Wolf configuration. Move to the
+          template unit when you want separate services for different radios or config files.
+        </p>
+        <p>
+          The examples below run the Dire Wolf binary directly, which keeps the service simple to
+          debug. You are troubleshooting the Dire Wolf process itself rather than a shell wrapper
+          or an interactive terminal session.
         </p>
       </section>
 
@@ -212,19 +220,30 @@
       </section>
 
       <section>
+        <h2>Recommended starting point</h2>
+        <p class="callout">
+          Choose the single-instance unit for a one-radio setup. Use the template unit when you need
+          multiple named services with different config files. Before copying either example, replace
+          <code>YOUR_USERNAME</code>, <code>YOUR_GROUP</code>, and the paths under
+          <code>/opt/direwolf</code> with values that match your system.
+          Note: make sure that the specified user has permissions to access the Dire Wolf config.
+        </p>
+      </section>
+
+      <section>
         <h2>Option A: Single-instance service</h2>
         <p>
           Use this when you have one Dire Wolf config and one running process.
         </p>
         <pre><code>[Unit]
-Description=Direwolf Sound Card-based AX.25 TNC
+Description=Dire Wolf Sound Card-based AX.25 TNC
 After=network.target
 After=sound.target
 
 [Service]
 Type=simple
-User=pi
-Group=pi
+User=YOUR_USERNAME
+Group=YOUR_GROUP
 WorkingDirectory=/opt/direwolf/
 ExecStart=/usr/local/bin/direwolf -t 1 -a 600 -c direwolf.conf
 Restart=always
@@ -244,16 +263,17 @@ WantedBy=multi-user.target</code></pre>
           Use this when you want multiple named Dire Wolf instances with different config files.
         </p>
         <pre><code>[Unit]
-Description=Direwolf %i Service
+Description=Dire Wolf %i Service
 Documentation=https://github.com/wb2osz/direwolf/blob/dev/doc/README.md
 After=network-online.target
+After=sound.target
 Wants=rigctld.service
 After=rigctld.service
 
 [Service]
 Type=simple
-User=pi
-Group=pi
+User=YOUR_USERNAME
+Group=YOUR_GROUP
 WorkingDirectory=/opt/direwolf/
 ExecStart=/usr/local/bin/direwolf -a 200 -qd -c direwolf-%i.conf
 Restart=always
@@ -269,9 +289,15 @@ WantedBy=multi-user.target</code></pre>
           For a second instance, <code>direwolf@hf</code> uses
           <code>/opt/direwolf/direwolf-hf.conf</code>.
         </p>
+        <p class="callout">
+          Using <code>Wants=rigctld.service</code> makes rigctld optional
+          and starts it if available. Dire Wolf will still start if rigctld
+          is not installed.
+        </p>
         <p>
-          Using <code>Wants=rigctld.service</code> makes rigctld optional. Dire Wolf will still
-          start if rigctld is not installed or not enabled.
+          For more details on Dire Wolf configuration, see the
+          <a href="https://github.com/wb2osz/direwolf/blob/master/doc/User-Guide.pdf">
+            Dire Wolf User Guide</a>.
         </p>
       </section>
 
@@ -367,7 +393,7 @@ journalctl -u direwolf@vhf -f -o cat --all</code></pre>
               <td>Root-cause restart loops</td>
               <td>
                 Restart policy and cadence are explicit in one place
-                (<code>Restart=always</code>, <code>RestartSec=15</code>) and easlily adjusted.
+                (<code>Restart=always</code>, <code>RestartSec=15</code>) and easily adjusted.
               </td>
             </tr>
             <tr>
