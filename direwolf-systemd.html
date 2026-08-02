@@ -129,9 +129,9 @@
         <h1>Use systemd to start and supervise Dire Wolf</h1>
         <p>
           This page explains two working systemd unit files and why they are usually a better
-          long-term choice for stability, supportability, and debuggability when running Dire Wolf
-          on a Linux system. The single-instance service is simpler, while the multi-instance
-          template service is more flexible.
+          long-term choice for initial deployment, stability, supportability, and debuggability
+          when running Dire Wolf on a Linux system. The single-instance service is simpler, while
+          the multi-instance template service is more flexible.
         </p>
       </section>
 
@@ -148,8 +148,11 @@
       </section>
 
       <section>
-        <h2>Supportability and debuggability advantages</h2>
+        <h2>Advantages to using systemd to manage Dire Wolf</h2>
         <p>
+          The Linux systemd model is the standard way to start and supervise long-running processes.
+          It has been optimized over many years to handle service dependencies, logging, and process
+          supervision.
           The biggest day-2 operations win with systemd is that service behavior, health, and logs
           are all visible through standard tools. This reduces hand-maintained scripts and the
           amount of "tribal knowledge" needed to support a station over time.
@@ -159,42 +162,40 @@
             <tr>
               <th>Topic</th>
               <th>systemd service</th>
-              <th>crontab + script</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td>Automatic restart</td>
-              <td>Built in (<code>Restart=always</code>, <code>RestartSec=15</code>)</td>
-              <td>Usually custom script logic or no restart</td>
+              <td>Built in (<code>Restart=always</code>, <code>RestartSec=15</code>) options.
+                Easily adjustable.</td>
             </tr>
             <tr>
               <td>Boot ordering</td>
               <td>
                 Explicit dependencies (<code>After=network.target</code>,
-                <code>After=rigctld.service</code>)
+                <code>After=rigctld.service</code>). Ensures Dire Wolf starts after required
+                services are ready, such as sound and network.
               </td>
-              <td>Harder to guarantee services are available when script runs</td>
             </tr>
             <tr>
               <td>Logging</td>
-              <td><code>journalctl -u ...</code>, built-in history and follow mode</td>
-              <td>Manual redirects, rotating logs, and troubleshooting overhead</td>
+              <td><code>journalctl -u ...</code>, built-in history and follow mode. Logs are centralized
+              and automatically rotated.</td>
             </tr>
             <tr>
               <td>Operational control</td>
-              <td><code>start</code>, <code>stop</code>, <code>status</code>, <code>enable</code></td>
-              <td>Often ad-hoc process management with shell commands and screen attach/detach</td>
+              <td><code>start</code>, <code>stop</code>, <code>status</code>, <code>enable</code>, 
+                <code>disable</code></td>
             </tr>
             <tr>
               <td>Least privilege</td>
-              <td>Run as non-root user via <code>User=</code> and <code>Group=</code></td>
-              <td>Easy to accidentally run with broader privileges</td>
+              <td>Run as non-root user via <code>User=</code> and <code>Group=</code>. Minimizes
+              security risks of running services as root.</td>
             </tr>
             <tr>
               <td>Multi-instance support</td>
               <td>Native with template units like <code>direwolf@.service</code></td>
-              <td>Requires separate scripts and process tracking per instance</td>
             </tr>
             <tr>
               <td>Operator handoff</td>
@@ -202,13 +203,12 @@
                 Any operator can run the same standard commands to see status, logs, and restart
                 history.
               </td>
-              <td>
-                Operators must know the local script path, cron entry, and screen session naming
-                convention.
-              </td>
             </tr>
           </tbody>
         </table>
+        <p>
+          For more information on systemd, see <a href="https://www.freedesktop.org/wiki/Software/systemd/">systemd wiki</a>.
+        </p>
       </section>
 
       <section>
@@ -325,12 +325,7 @@ journalctl -u direwolf@vhf -f -o cat --all</code></pre>
       </section>
 
       <section>
-        <h2>Systemd vs screen session debugging</h2>
-        <p>
-          Running Dire Wolf under screen can work, but debugging typically spans several moving
-          parts: cron invocation, shell script logic, process state, and terminal multiplexing.
-          Systemd centralizes those signals into one service record.
-        </p>
+        <h2>Systemd debugging</h2>
         <p class="callout">
           A key supportability advantage: if Dire Wolf exits, the screen session may disappear with
           the error text that was on screen. With systemd, stdout/stderr is captured in journald
@@ -341,7 +336,6 @@ journalctl -u direwolf@vhf -f -o cat --all</code></pre>
             <tr>
               <th>Debug task</th>
               <th>systemd workflow</th>
-              <th>crontab + screen workflow</th>
             </tr>
           </thead>
           <tbody>
@@ -351,48 +345,29 @@ journalctl -u direwolf@vhf -f -o cat --all</code></pre>
                 <code>systemctl status direwolf</code> immediately shows exit code, last logs, and
                 unit state.
               </td>
-              <td>
-                Check cron fired, check script path/permissions, verify screen session exists,
-                then inspect script output if captured.
-              </td>
             </tr>
             <tr>
               <td>Find recent errors</td>
               <td>
-                <code>journalctl -u direwolf --since "-15 min"</code> gives a time-bounded log view.
-              </td>
-              <td>
-                Need to locate cron logs, shell history, screen scrollback, and any custom log
-                files.
+                <code>journalctl -u direwolf --since "15 minutes ago"</code> gives a time-bounded log view.
               </td>
             </tr>
             <tr>
               <td>Follow live behavior</td>
               <td><code>journalctl -u direwolf -f</code> is the standard live tail.</td>
-              <td>
-                Must attach to the correct screen session and detach safely; output can be missed
-                if the session is recreated.
-              </td>
             </tr>
             <tr>
               <td>Post-crash evidence retention</td>
               <td>
-                <code>journalctl -u direwolf --since "-1 hour"</code> preserves crash messages even
+                <code>journalctl -u direwolf --since "1 hour ago"</code> preserves crash messages even
                 after service exit/restart.
-              </td>
-              <td>
-                If Dire Wolf exits and the screen session terminates, error output can be lost
-                unless separately redirected to a log file.
               </td>
             </tr>
             <tr>
               <td>Root-cause restart loops</td>
               <td>
                 Restart policy and cadence are explicit in one place
-                (<code>Restart=always</code>, <code>RestartSec=15</code>).
-              </td>
-              <td>
-                Restart behavior often buried in script logic, making loops harder to reason about.
+                (<code>Restart=always</code>, <code>RestartSec=15</code>) and easlily adjusted.
               </td>
             </tr>
             <tr>
@@ -401,20 +376,12 @@ journalctl -u direwolf@vhf -f -o cat --all</code></pre>
                 <code>systemctl show direwolf -p ExecStart,FragmentPath</code> shows exact unit
                 command and source file.
               </td>
-              <td>
-                Need to inspect crontab, then inspect dw-start.sh, then inspect any nested shell
-                calls from that script.
-              </td>
             </tr>
             <tr>
               <td>Dependency visibility</td>
               <td>
                 Unit declares ordering/dependencies with
                 <code>After=</code>/<code>Wants=</code>/<code>Requires=</code>.
-              </td>
-              <td>
-                Script usually has implicit assumptions (network, audio, rigctld) with less clear
-                failure signals.
               </td>
             </tr>
           </tbody>
