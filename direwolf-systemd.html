@@ -226,7 +226,7 @@ Type=simple
 User=pi
 Group=pi
 WorkingDirectory=/opt/direwolf/
-ExecStart=/usr/local/bin/direwolf -t 1 -a 600 -c direwolf.conf
+ExecStart=/usr/local/bin/direwolf -t 1 -a 600 -c config/direwolf.conf
 Restart=always
 RestartSec=15
 
@@ -309,7 +309,7 @@ journalctl -u direwolf@vhf -f</code></pre>
           with systemd and journalctl.
         </p>
         <pre><code># 1) Keep -t 1 in ExecStart so Dire Wolf emits ANSI color
-ExecStart=/usr/local/bin/direwolf -t 1 -a 600 -c direwolf.conf
+ExecStart=/usr/local/bin/direwolf -t 1 -a 600 -c config/direwolf.conf
 
 # 2) Follow logs in a cleaner, terminal-like format
 journalctl -u direwolf -f -o cat --all
