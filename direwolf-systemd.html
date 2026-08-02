@@ -44,6 +44,14 @@
         margin-bottom: 1.25rem;
       }
 
+      section {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-top: 1rem;
+      }
+
       h1,
       h2,
       h3 {
@@ -57,6 +65,10 @@
 
       h2 {
         margin-top: 1.8rem;
+      }
+
+      section h2 {
+        margin-top: 0;
       }
 
       a {
@@ -117,8 +129,9 @@
         <h1>Use systemd to start and supervise Dire Wolf</h1>
         <p>
           This page explains two working systemd unit files and why they are usually a better
-          long-term choice for stability and supportability of running direwolf on a Linux system.
-          The single-instance service is simpler, while the multi-instance template service can be more flexible.
+          long-term choice for stability, supportability, and debuggability when running Dire Wolf
+          on a Linux system. The single-instance service is simpler, while the multi-instance
+          template service is more flexible.
         </p>
       </section>
 
@@ -135,11 +148,11 @@
       </section>
 
       <section>
-        <h2>Supportability and debugability advantages</h2>
+        <h2>Supportability and debuggability advantages</h2>
         <p>
           The biggest day-2 operations win with systemd is that service behavior, health, and logs
-          are all visible through standard tools. This reduces hand-maintained scripts and reduces
-          the amount of "tribal knowledge" needed to support a station over time.
+          are all visible through standard tools. This reduces hand-maintained scripts and the
+          amount of "tribal knowledge" needed to support a station over time.
         </p>
         <table>
           <thead>
@@ -219,6 +232,10 @@ RestartSec=15
 
 [Install]
 WantedBy=multi-user.target</code></pre>
+        <p>
+          Example: starting <code>direwolf</code> uses
+          <code>/opt/direwolf/config/direwolf.conf</code>.
+        </p>
       </section>
 
       <section>
@@ -247,6 +264,8 @@ WantedBy=multi-user.target</code></pre>
         <p>
           Example: starting <code>direwolf@vhf</code> uses
           <code>/opt/direwolf/config/direwolf-vhf.conf</code>.
+          For a second instance, <code>direwolf@hf</code> uses
+          <code>/opt/direwolf/config/direwolf-hf.conf</code>.
         </p>
         <p>
           Using <code>Wants=rigctld.service</code> makes rigctld optional. Dire Wolf will still
@@ -315,106 +334,106 @@ journalctl -u direwolf@vhf -f -o cat --all</code></pre>
           the error text that was on screen. With systemd, stdout/stderr is captured in journald
           and remains available after the process exits.
         </p>
-          <table>
-            <thead>
-              <tr>
-                <th>Debug task</th>
-                <th>systemd workflow</th>
-                <th>crontab + screen workflow</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Did startup fail?</td>
-                <td>
-                  <code>systemctl status direwolf</code> immediately shows exit code, last logs, and
-                  unit state.
-                </td>
-                <td>
-                  Check cron fired, check script path/permissions, verify screen session exists,
-                  then inspect script output if captured.
-                </td>
-              </tr>
-              <tr>
-                <td>Find recent errors</td>
-                <td>
-                  <code>journalctl -u direwolf --since "-15 min"</code> gives a time-bounded log view.
-                </td>
-                <td>
-                  Need to locate cron logs, shell history, screen scrollback, and any custom log
-                  files.
-                </td>
-              </tr>
-              <tr>
-                <td>Follow live behavior</td>
-                <td><code>journalctl -u direwolf -f</code> is the standard live tail.</td>
-                <td>
-                  Must attach to the correct screen session and detach safely; output can be missed
-                  if the session is recreated.
-                </td>
-              </tr>
-              <tr>
-                <td>Post-crash evidence retention</td>
-                <td>
-                  <code>journalctl -u direwolf --since "-1 hour"</code> preserves crash messages
-                  even after service exit/restart.
-                </td>
-                <td>
-                  If Dire Wolf exits and the screen session terminates, error output can be lost
-                  unless separately redirected to a log file.
-                </td>
-              </tr>
-              <tr>
-                <td>Root-cause restart loops</td>
-                <td>
-                  Restart policy and cadence are explicit in one place
-                  (<code>Restart=always</code>, <code>RestartSec=15</code>).
-                </td>
-                <td>
-                  Restart behavior often buried in script logic, making loops harder to reason about.
-                </td>
-              </tr>
-              <tr>
-                <td>See which command actually started</td>
-                <td>
-                  <code>systemctl show direwolf -p ExecStart,FragmentPath</code> shows exact unit
-                  command and source file.
-                </td>
-                <td>
-                  Need to inspect crontab, then inspect dw-start.sh, then inspect any nested shell
-                  calls from that script.
-                </td>
-              </tr>
-              <tr>
-                <td>Dependency visibility</td>
-                <td>
-                  Unit declares ordering/dependencies with
-                  <code>After=</code>/<code>Wants=</code>/<code>Requires=</code>.
-                </td>
-                <td>
-                  Script usually has implicit assumptions (network, audio, rigctld) with less clear
-                  failure signals.
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <pre><code># Fast systemd debug checklist
-        systemctl status direwolf@vhf
-        journalctl -u direwolf@vhf --since "-30 min"
-        journalctl -u direwolf@vhf -f
-        systemctl show direwolf@vhf -p ActiveState,SubState,ExecMainStatus,FragmentPath
+        <table>
+          <thead>
+            <tr>
+              <th>Debug task</th>
+              <th>systemd workflow</th>
+              <th>crontab + screen workflow</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Did startup fail?</td>
+              <td>
+                <code>systemctl status direwolf</code> immediately shows exit code, last logs, and
+                unit state.
+              </td>
+              <td>
+                Check cron fired, check script path/permissions, verify screen session exists,
+                then inspect script output if captured.
+              </td>
+            </tr>
+            <tr>
+              <td>Find recent errors</td>
+              <td>
+                <code>journalctl -u direwolf --since "-15 min"</code> gives a time-bounded log view.
+              </td>
+              <td>
+                Need to locate cron logs, shell history, screen scrollback, and any custom log
+                files.
+              </td>
+            </tr>
+            <tr>
+              <td>Follow live behavior</td>
+              <td><code>journalctl -u direwolf -f</code> is the standard live tail.</td>
+              <td>
+                Must attach to the correct screen session and detach safely; output can be missed
+                if the session is recreated.
+              </td>
+            </tr>
+            <tr>
+              <td>Post-crash evidence retention</td>
+              <td>
+                <code>journalctl -u direwolf --since "-1 hour"</code> preserves crash messages even
+                after service exit/restart.
+              </td>
+              <td>
+                If Dire Wolf exits and the screen session terminates, error output can be lost
+                unless separately redirected to a log file.
+              </td>
+            </tr>
+            <tr>
+              <td>Root-cause restart loops</td>
+              <td>
+                Restart policy and cadence are explicit in one place
+                (<code>Restart=always</code>, <code>RestartSec=15</code>).
+              </td>
+              <td>
+                Restart behavior often buried in script logic, making loops harder to reason about.
+              </td>
+            </tr>
+            <tr>
+              <td>See which command actually started</td>
+              <td>
+                <code>systemctl show direwolf -p ExecStart,FragmentPath</code> shows exact unit
+                command and source file.
+              </td>
+              <td>
+                Need to inspect crontab, then inspect dw-start.sh, then inspect any nested shell
+                calls from that script.
+              </td>
+            </tr>
+            <tr>
+              <td>Dependency visibility</td>
+              <td>
+                Unit declares ordering/dependencies with
+                <code>After=</code>/<code>Wants=</code>/<code>Requires=</code>.
+              </td>
+              <td>
+                Script usually has implicit assumptions (network, audio, rigctld) with less clear
+                failure signals.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <pre><code># Fast systemd debug checklist
+systemctl status direwolf@vhf
+journalctl -u direwolf@vhf --since "-30 min"
+journalctl -u direwolf@vhf -f
+systemctl show direwolf@vhf -p ActiveState,SubState,ExecMainStatus,FragmentPath
 
-        # Equivalent screen-oriented checks often needed for comparison
-        crontab -l
-        screen -ls
-        ps -ef | grep "[d]irewolf"</code></pre>
-          </section>
+# Equivalent screen-oriented checks often needed for comparison
+crontab -l
+screen -ls
+ps -ef | grep "[d]irewolf"</code></pre>
+      </section>
 
       <section>
-        <h2>Migrating from @reboot cron and dw-start.sh</h2>
+        <h2>Migrating from cron and dw-start.sh</h2>
         <p>
-          Once your systemd unit is working, remove or comment out old
-          <code>@reboot</code> entries that launch Dire Wolf through <code>dw-start.sh</code>. Running
+          Before trying to start Dire Wolf with systemd, make sure any old crontab entries that
+          launch Dire Wolf through <code>dw-start.sh</code> are removed or commented out. Running
           both methods together can create duplicate processes and audio/PTT conflicts.
         </p>
       </section>
