@@ -137,6 +137,10 @@
         <h1>Dire Wolf Debugging Notes</h1>
         <p>
           This page collects common Dire Wolf failure modes and practical debug steps.
+          It assumes Dire Wolf is normally run with systemd. Command-line examples are included
+          only for short diagnostic runs.
+        </p>
+        <p>
           The upstream docs remain the primary reference for behavior and options:
           <a href="https://github.com/wb2osz/direwolf">Dire Wolf repository</a> and
           <a href="https://github.com/wb2osz/direwolf/blob/master/doc/User-Guide.pdf">User Guide</a>.
@@ -144,28 +148,41 @@
       </section>
 
       <section>
-        <h2>First 5-minute triage</h2>
+        <h2>Quick copy/paste checklist</h2>
+        <p class="callout">
+          Use this when you need a fast first pass. It is systemd-first, with one optional
+          foreground run for immediate error text.
+        </p>
         <p class="callout">
           Do not change multiple things at once. Capture baseline output first, then make one change,
           test again, and keep notes.
         </p>
-        <pre><code># Binary and version
+        <pre><code># 1) Confirm binary and service health
 which direwolf
 direwolf -h
-
-# Run in foreground for immediate errors
-# Adjust path for your setup
-direwolf -t 0 -c /opt/direwolf/direwolf.conf
-
-# If using systemd
 systemctl status direwolf
-journalctl -u direwolf --since "15 minutes ago"
+journalctl -u direwolf --since "20 minutes ago" --no-pager
 
-# Audio device inventory
+# 2) Confirm config path loaded by systemd
+systemctl show direwolf -p ExecStart,User,Group,WorkingDirectory
+
+# 3) Check audio devices and card mapping
 aplay -l
-arecord -l</code></pre>
-      </section>
+arecord -l
+cat /proc/asound/cards
 
+# 4) Open mixer for the target card (replace index)
+alsamixer -c 0
+
+# 5) Check KISS/AGW listener ports (replace placeholders)
+ss -ltnp | grep -E "PORT1|PORT2|PORT3"
+
+# 6) If issue appears after transmit, check for USB/audio reset events
+journalctl -k --since "20 minutes ago" | grep -Ei "usb|snd|audio|reset|disconnect"
+
+# 7) Optional one-time foreground debug run
+direwolf -t 0 -c /opt/direwolf/direwolf.conf</code></pre>
+      </section>
       <section>
         <h2>Common issues and fixes</h2>
         <table>
@@ -199,8 +216,8 @@ arecord -l</code></pre>
             <tr>
               <td>Audio level mismatch</td>
               <td>Poor/no packet decode, noisy demod</td>
-              <td>Input/output gain and radio volume settings</td>
-              <td>Tune levels gradually while observing Dire Wolf decode output.</td>
+              <td>Input/output gain, mute state, and radio volume settings</td>
+              <td>Use <code>alsamixer</code> to confirm capture/playback channels are unmuted, then tune levels gradually while observing Dire Wolf decode output.</td>
             </tr>
             <tr>
               <td>PTT method mismatch</td>
@@ -220,8 +237,34 @@ arecord -l</code></pre>
               <td>Initial failure in <code>journalctl</code> before restart</td>
               <td>Fix root cause first, then restart service; do not only increase <code>RestartSec</code>.</td>
             </tr>
+            <tr>
+              <td>RFI impacts USB audio after transmit</td>
+              <td>Works at idle, then decode fails or device drops after TX</td>
+              <td>Kernel and service logs around transmit time</td>
+              <td>Add ferrites/chokes, improve cable routing/grounding, and reduce common-mode RF in station wiring.</td>
+            </tr>
           </tbody>
         </table>
+      </section>
+
+      <section>
+        <h2>Distro variations to keep in mind</h2>
+        <p class="callout">
+          Group names and audio stack behavior vary by distribution. Verify local groups and
+          membership before changing service users or permissions.
+        </p>
+        <pre><code># Check whether common groups exist on this distro
+getent group audio
+getent group dialout
+getent group uucp
+getent group gpio
+
+# Show current service account groups
+id YOUR_USERNAME</code></pre>
+        <p>
+          Debian/Ubuntu often use <code>audio</code> and <code>dialout</code>. Fedora/RHEL-family
+          systems may use different serial or GPIO group names. Always match your local system.
+        </p>
       </section>
 
       <section>
@@ -239,6 +282,7 @@ systemctl show direwolf -p ExecStart,User,Group,WorkingDirectory</code></pre>
         <h3>2) Audio capture/playback trouble</h3>
         <pre><code>arecord -l
 aplay -l
+      cat /proc/asound/cards
 
 # Short capture test from selected device
 arecord -D plughw:0,0 -f S16_LE -r 48000 -c 1 -d 5 /tmp/dw-test.wav
@@ -247,15 +291,92 @@ aplay /tmp/dw-test.wav</code></pre>
           If this capture test fails, fix ALSA/device/permission problems first, then return to Dire Wolf.
         </p>
 
+        <h3>2a) Check mute and levels with alsamixer</h3>
+        <pre><code># Open mixer for target card index
+alsamixer -c 0
+
+# Useful keys inside alsamixer:
+# F4 = Capture view, F5 = All controls, M = mute/unmute, arrows = level adjust</code></pre>
+        <p>
+          In Capture view, verify the expected input is active and not muted. In Playback view,
+          ensure output is not muted if your interface requires monitor/playback routing. If levels
+          are too high, clipping can look like random decode failures.
+        </p>
+        <p class="callout">
+          If your device exposes Auto Gain Control (AGC), disable it for packet use.
+          AGC can hurt decode consistency.
+        </p>
+        <pre><code># 1) Open mixer for your sound card index
+alsamixer -c 0
+
+# 2) Press F5 to show all controls (or F4 for Capture view)
+# 3) Use left/right arrows to find controls like:
+#    Auto Gain Control, AGC, Mic Boost, or similar
+# 4) Disable the control:
+#    - For On/Off style controls, press M to toggle to Off
+#    - For value/enumerated controls, use up/down arrows until Off/Disabled
+# 5) Press Esc to exit
+
+# 6) Save mixer settings so they survive reboot
+sudo alsactl store</code></pre>
+        <p>
+          Control names vary by USB codec, so check both Capture and All controls. If decode gets
+          worse after a change, revert that one control and retest.
+        </p>
+        <p class="muted">
+          AGC indicator style varies by device. On many mixers, <code>00</code> means on and
+          <code>MM</code> means off (disabled). On others, expect labels like Off/Disabled.
+        </p>
+
         <h3>3) KISS/AGW client cannot connect</h3>
-        <pre><code>ss -ltnp | grep -E "8000|8001|8002"
-# Replace with your configured ports
+        <pre><code># Replace with your configured KISS/AGW ports
+ss -ltnp | grep -E "PORT1|PORT2|PORT3"
 
 # Show process using a port
-sudo lsof -iTCP -sTCP:LISTEN -n -P | grep 8001</code></pre>
+sudo lsof -iTCP -sTCP:LISTEN -n -P | grep PORT1</code></pre>
         <p>
           Ensure only one process is bound to each required port and client software points to the same host/port.
         </p>
+
+        <h3>4) Works until transmit, then audio fails (RFI)</h3>
+        <pre><code># Look for USB/audio reset events around transmit time
+journalctl -k --since "15 minutes ago" | grep -Ei "usb|snd|audio|reset|disconnect"
+
+# Correlate with Dire Wolf service logs
+journalctl -u direwolf --since "15 minutes ago"</code></pre>
+        <p>
+          If failures align with transmit events, treat this as RF coupling first, then retest.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Mitigation</th>
+              <th>Operator hint</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Ferrites/chokes</td>
+              <td>Install ferrites on USB/audio/power leads near both equipment ends.</td>
+            </tr>
+            <tr>
+              <td>Cable routing</td>
+              <td>Keep interface cables away from feedline and high RF fields; avoid long parallel runs.</td>
+            </tr>
+            <tr>
+              <td>Station bonding</td>
+              <td>Improve bonding and common grounding to reduce common-mode current paths.</td>
+            </tr>
+            <tr>
+              <td>RF path control</td>
+              <td>Lower TX power for testing and verify feedline/common-mode choke effectiveness.</td>
+            </tr>
+            <tr>
+              <td>USB stability</td>
+              <td>Try a different USB port, shorter shielded cable, or powered hub.</td>
+            </tr>
+          </tbody>
+        </table>
       </section>
 
       <section>
