@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dire Wolf Debugging Notes</title>
+    <style>
+      :root {
+        --bg: #f4efe6;
+        --surface: #fffaf0;
+        --ink: #1e2a2f;
+        --muted: #4c5a61;
+        --accent: #b14f2f;
+        --accent-2: #2f6f74;
+        --line: #d9ccba;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+        line-height: 1.6;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 8% 12%, #f0d6b6 0, transparent 22%),
+          radial-gradient(circle at 90% 18%, #d6ebe3 0, transparent 20%),
+          var(--bg);
+      }
+
+      main {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 2rem 1rem 3rem;
+      }
+
+      .hero {
+        background: linear-gradient(135deg, #f8f0e2, #eaf3ef);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 1.25rem;
+        margin-bottom: 1.25rem;
+      }
+
+      section {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-top: 1rem;
+      }
+
+      h1,
+      h2,
+      h3 {
+        line-height: 1.2;
+      }
+
+      h1 {
+        margin-top: 0;
+        color: #7b341f;
+      }
+
+      h2 {
+        margin-top: 1.8rem;
+      }
+
+      section h2 {
+        margin-top: 0;
+      }
+
+      p {
+        margin: 0.6rem 0;
+      }
+
+      a {
+        color: var(--accent-2);
+        font-weight: 600;
+      }
+
+      pre,
+      code {
+        font-family: "DejaVu Sans Mono", Menlo, Monaco, monospace;
+      }
+
+      pre {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 0.9rem;
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--surface);
+        border: 1px solid var(--line);
+      }
+
+      th,
+      td {
+        text-align: left;
+        border: 1px solid var(--line);
+        padding: 0.55rem;
+        vertical-align: top;
+      }
+
+      .badge {
+        display: inline-block;
+        background: #efe1ce;
+        border: 1px solid #cfb89b;
+        border-radius: 999px;
+        padding: 0.2rem 0.6rem;
+        font-size: 0.85rem;
+      }
+
+      .callout {
+        background: #eef6f4;
+        border-left: 4px solid var(--accent-2);
+        padding: 0.7rem 0.9rem;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p><a href="index.html">Back to WG0A main page</a></p>
+
+      <section class="hero">
+        <p class="badge">Dire Wolf troubleshooting</p>
+        <h1>Dire Wolf Debugging Notes</h1>
+        <p>
+          This page collects common Dire Wolf failure modes and practical debug steps.
+          The upstream docs remain the primary reference for behavior and options:
+          <a href="https://github.com/wb2osz/direwolf">Dire Wolf repository</a> and
+          <a href="https://github.com/wb2osz/direwolf/blob/master/doc/User-Guide.pdf">User Guide</a>.
+        </p>
+      </section>
+
+      <section>
+        <h2>First 5-minute triage</h2>
+        <p class="callout">
+          Do not change multiple things at once. Capture baseline output first, then make one change,
+          test again, and keep notes.
+        </p>
+        <pre><code># Binary and version
+which direwolf
+direwolf -h
+
+# Run in foreground for immediate errors
+# Adjust path for your setup
+direwolf -t 0 -c /opt/direwolf/direwolf.conf
+
+# If using systemd
+systemctl status direwolf
+journalctl -u direwolf --since "15 minutes ago"
+
+# Audio device inventory
+aplay -l
+arecord -l</code></pre>
+      </section>
+
+      <section>
+        <h2>Common issues and fixes</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Issue</th>
+              <th>Typical symptom</th>
+              <th>What to check</th>
+              <th>Common fix</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Wrong config path</td>
+              <td>Service exits immediately, cannot open config</td>
+              <td><code>ExecStart</code> path and <code>-c</code> argument</td>
+              <td>Move config to <code>/opt/direwolf/</code> or update unit path to match real location.</td>
+            </tr>
+            <tr>
+              <td>Permissions on config/audio/GPIO</td>
+              <td>Permission denied, no PTT, no audio access</td>
+              <td>Service user/group and file/device ownership</td>
+              <td>Run as correct user; add user to needed groups (often <code>audio</code>, <code>dialout</code>, gpio-related groups).</td>
+            </tr>
+            <tr>
+              <td>Wrong audio device</td>
+              <td>No decode even with active channel</td>
+              <td>ALSA device names in config vs <code>arecord -l</code></td>
+              <td>Set correct <code>ADEVICE</code> values and retest in foreground.</td>
+            </tr>
+            <tr>
+              <td>Audio level mismatch</td>
+              <td>Poor/no packet decode, noisy demod</td>
+              <td>Input/output gain and radio volume settings</td>
+              <td>Tune levels gradually while observing Dire Wolf decode output.</td>
+            </tr>
+            <tr>
+              <td>PTT method mismatch</td>
+              <td>Decodes RX but never transmits</td>
+              <td><code>PTT</code> settings in config and physical interface wiring</td>
+              <td>Verify RTS/DTR/GPIO mode, pin mapping, and interface cabling.</td>
+            </tr>
+            <tr>
+              <td>Port conflict (KISS/AGW)</td>
+              <td>Client cannot connect, bind failed</td>
+              <td>Configured TCP ports and listeners</td>
+              <td>Find conflicting process and choose unused ports.</td>
+            </tr>
+            <tr>
+              <td>Restart loop under systemd</td>
+              <td>Service flaps every few seconds</td>
+              <td>Initial failure in <code>journalctl</code> before restart</td>
+              <td>Fix root cause first, then restart service; do not only increase <code>RestartSec</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Focused debug workflows</h2>
+
+        <h3>1) Service fails at startup</h3>
+        <pre><code>systemctl status direwolf
+journalctl -u direwolf -b --no-pager
+systemctl show direwolf -p ExecStart,User,Group,WorkingDirectory</code></pre>
+        <p>
+          Confirm the executable path and config file path are valid for the service account.
+          On this site, many examples assume config files are in <code>/opt/direwolf/</code>.
+        </p>
+
+        <h3>2) Audio capture/playback trouble</h3>
+        <pre><code>arecord -l
+aplay -l
+
+# Short capture test from selected device
+arecord -D plughw:0,0 -f S16_LE -r 48000 -c 1 -d 5 /tmp/dw-test.wav
+aplay /tmp/dw-test.wav</code></pre>
+        <p>
+          If this capture test fails, fix ALSA/device/permission problems first, then return to Dire Wolf.
+        </p>
+
+        <h3>3) KISS/AGW client cannot connect</h3>
+        <pre><code>ss -ltnp | grep -E "8000|8001|8002"
+# Replace with your configured ports
+
+# Show process using a port
+sudo lsof -iTCP -sTCP:LISTEN -n -P | grep 8001</code></pre>
+        <p>
+          Ensure only one process is bound to each required port and client software points to the same host/port.
+        </p>
+      </section>
+
+      <section>
+        <h2>When packets are not decoding well</h2>
+        <p>
+          Decode quality is usually an RF or audio path issue, not only a software issue.
+          Work in this order:
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Step</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>Verify known on-air activity on the target frequency.</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Confirm correct radio mode/filter/deviation for your channel plan.</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>Reduce clipping and avoid overdriving audio paths.</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>Retest with a short baseline config before adding advanced options.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Collect useful data before asking for help</h2>
+        <pre><code># Replace with your service name or instance
+systemctl status direwolf
+journalctl -u direwolf --since "30 minutes ago" --no-pager
+
+# Runtime environment
+uname -a
+cat /etc/os-release
+direwolf -h | head -n 5</code></pre>
+        <p class="muted">
+          Include the exact command used to start Dire Wolf and a sanitized copy of the relevant config section.
+        </p>
+      </section>
+
+      <section>
+        <h2>Related WG0A notes</h2>
+        <p><a href="direwolf-install-linux.html">How to install Dire Wolf on Linux</a></p>
+        <p><a href="direwolf-systemd.html">How to run Dire Wolf with systemd</a></p>
+      </section>
+    </main>
+  </body>
+</html>
