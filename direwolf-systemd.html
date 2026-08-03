@@ -130,16 +130,18 @@
         <p>
           This page shows two practical systemd unit examples for running Dire Wolf on Linux.
           They are usually easier to support over time than relying on screen or tmux because the
-          service state, logs, and restart behavior are visible through standard tools.
+          service state, logs, and restart behavior are visible through standard tools. I highly 
+          recommend not trying to use screen or tmux, even when starting direwolf through systemd.
+          Using screen or tmux adds complexity and makes it harder to see the service state and logs.
         </p>
         <p>
           Start with the single-instance unit if you have one Dire Wolf configuration. Move to the
           template unit when you want separate services for different radios or config files.
         </p>
         <p>
-          The examples below run the Dire Wolf binary directly, which keeps the service simple to
-          debug. You are troubleshooting the Dire Wolf process itself rather than a shell wrapper
-          or an interactive terminal session.
+          The examples below run the Dire Wolf binary directly, which keeps the service simple to debug.
+          In this case, you are troubleshooting the direwolf process itself rather than a shell wrapper
+          script and screen session and direwolf.
         </p>
       </section>
 
