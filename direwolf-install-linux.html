@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Install Dire Wolf on Linux</title>
+    <style>
+      :root {
+        --bg: #f4efe6;
+        --surface: #fffaf0;
+        --ink: #1e2a2f;
+        --muted: #4c5a61;
+        --accent: #b14f2f;
+        --accent-2: #2f6f74;
+        --line: #d9ccba;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+        line-height: 1.6;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 8% 12%, #f0d6b6 0, transparent 22%),
+          radial-gradient(circle at 90% 18%, #d6ebe3 0, transparent 20%),
+          var(--bg);
+      }
+
+      main {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 2rem 1rem 3rem;
+      }
+
+      .hero {
+        background: linear-gradient(135deg, #f8f0e2, #eaf3ef);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 1.25rem;
+        margin-bottom: 1.25rem;
+      }
+
+      section {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-top: 1rem;
+      }
+
+      h1,
+      h2,
+      h3 {
+        line-height: 1.2;
+      }
+
+      h1 {
+        margin-top: 0;
+        color: #7b341f;
+      }
+
+      h2 {
+        margin-top: 1.8rem;
+      }
+
+      section h2 {
+        margin-top: 0;
+      }
+
+      p {
+        margin: 0.6rem 0;
+      }
+
+      a {
+        color: var(--accent-2);
+        font-weight: 600;
+      }
+
+      pre,
+      code {
+        font-family: "DejaVu Sans Mono", Menlo, Monaco, monospace;
+      }
+
+      pre {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 0.9rem;
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--surface);
+        border: 1px solid var(--line);
+      }
+
+      th,
+      td {
+        text-align: left;
+        border: 1px solid var(--line);
+        padding: 0.55rem;
+        vertical-align: top;
+      }
+
+      .badge {
+        display: inline-block;
+        background: #efe1ce;
+        border: 1px solid #cfb89b;
+        border-radius: 999px;
+        padding: 0.2rem 0.6rem;
+        font-size: 0.85rem;
+      }
+
+      .callout {
+        background: #eef6f4;
+        border-left: 4px solid var(--accent-2);
+        padding: 0.7rem 0.9rem;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p><a href="index.html">Back to WG0A main page</a></p>
+
+      <section class="hero">
+        <p class="badge">Dire Wolf installation</p>
+        <h1>Install Dire Wolf on Linux</h1>
+        <p>
+          See the the upstream Dire Wolf README for the main installation instructions:
+          <a href="https://github.com/wb2osz/direwolf#installation">Dire Wolf Installation</a>.
+          This page keeps a Linux-focused quick path and adds a few operator notes and tips.
+        </p>
+      </section>
+
+      <section>
+        <h2>Quick decision guide</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Goal</th>
+              <th>Recommended method</th>
+              <th>Why</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Fastest install from distro packages</td>
+              <td>Package manager install</td>
+              <td>Simple and reliable, but versions may lag behind upstream.</td>
+            </tr>
+            <tr>
+              <td>Latest stable or development build</td>
+              <td>Build from git clone</td>
+              <td>Matches upstream recommendation and gives the newest features/fixes.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Important RHEL-family note: use dnf on modern systems</h2>
+        <p class="callout">
+          Some upstream examples still show <code>yum</code>. On modern Red Hat family systems
+          (Fedora, RHEL 8+, Rocky Linux, AlmaLinux, CentOS Stream), use <code>dnf</code>.
+          On older systems such as RHEL/CentOS 7, <code>yum</code> may still be required.
+        </p>
+        <p class="muted">
+          Operational rule: if <code>dnf --version</code> works, use <code>dnf</code> commands below.
+        </p>
+      </section>
+
+      <section>
+        <h2>Method 1: Install from distro packages</h2>
+
+        <h3>Debian / Ubuntu / Raspberry Pi OS</h3>
+        <pre><code>sudo apt-get update
+apt-cache showpkg direwolf
+sudo apt-get install direwolf</code></pre>
+
+        <h3>Fedora / RHEL 8+ / Rocky / Alma / CentOS Stream</h3>
+        <pre><code>sudo dnf check-update
+sudo dnf list direwolf
+sudo dnf install direwolf</code></pre>
+
+        <h3>Older RHEL/CentOS (legacy)</h3>
+        <pre><code>sudo yum check-update
+sudo yum list direwolf
+sudo yum install direwolf</code></pre>
+
+        <p>
+          Package repositories are maintained by distro maintainers, so versions can be older than current upstream.
+        </p>
+      </section>
+
+      <section>
+        <h2>Method 2: Build from source (upstream recommended)</h2>
+        <p>
+          This follows the Linux git-clone flow from upstream and is the best path when you want current releases.
+        </p>
+
+        <h3>Install build dependencies (Debian/Ubuntu family)</h3>
+        <pre><code>sudo apt-get update
+sudo apt-get install -y git gcc g++ make cmake \
+  libasound2-dev libudev-dev libavahi-client-dev
+# Optional: GPIO PTT support
+sudo apt-get install -y libgpiod-dev</code></pre>
+
+        <h3>Install build dependencies (Fedora/RHEL 8+ family)</h3>
+        <pre><code>sudo dnf install -y git gcc gcc-c++ make cmake \
+  alsa-lib-devel libudev-devel avahi-devel
+# Optional: GPIO PTT support
+sudo dnf install -y libgpiod-devel</code></pre>
+
+        <h3>Clone and build</h3>
+        <pre><code>cd ~
+git clone https://www.github.com/wb2osz/direwolf
+cd direwolf
+# Optional: use development branch instead of latest stable
+# git checkout dev
+mkdir -p build && cd build
+cmake ..
+make -j"$(nproc)"
+sudo make install
+make install-conf</code></pre>
+
+        <p>
+          If you do not run <code>git checkout dev</code>, you build from the default branch (stable path).
+          If you do run it, you get the latest development code.
+        </p>
+      </section>
+
+      <section>
+        <h2>Basic validation after install</h2>
+        <pre><code>direwolf -h
+which direwolf</code></pre>
+        <p>
+          Confirm your config file is present (usually <code>~/direwolf.conf</code> or
+          <code>/usr/local/etc/direwolf.conf</code>, depending on how you installed).
+        </p>
+      </section>
+
+      <section>
+        <h2>Related WG0A notes</h2>
+        <p>
+          After installation, use this for service management:
+          <a href="direwolf-systemd.html">How to run Dire Wolf with systemd</a>
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
