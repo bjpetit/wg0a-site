@@ -228,6 +228,8 @@
           multiple named services with different config files. Before copying either example, replace
           <code>YOUR_USERNAME</code>, <code>YOUR_GROUP</code>, and the paths under
           <code>/opt/direwolf</code> with values that match your system.
+          The <code>-a</code> option determines how often direwolf prints audio level statistics (in seconds).
+          This can be adjusted if you are debugging decoding issues.
           These examples assume your Dire Wolf config file(s) are stored in
           <code>/opt/direwolf/</code>, so move your existing <code>direwolf.conf</code> (and any
           <code>direwolf-*.conf</code> files) there before enabling the service.
@@ -421,12 +423,7 @@ journalctl -u direwolf@vhf -f -o cat --all</code></pre>
 systemctl status direwolf@vhf
 journalctl -u direwolf@vhf --since "-30 min"
 journalctl -u direwolf@vhf -f
-systemctl show direwolf@vhf -p ActiveState,SubState,ExecMainStatus,FragmentPath
-
-# Equivalent screen-oriented checks often needed for comparison
-crontab -l
-screen -ls
-ps -ef | grep "[d]irewolf"</code></pre>
+systemctl show direwolf@vhf -p ActiveState,SubState,ExecMainStatus,FragmentPath</code></pre>
       </section>
 
       <section>

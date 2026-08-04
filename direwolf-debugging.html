@@ -171,8 +171,8 @@ aplay -l
 arecord -l
 cat /proc/asound/cards
 
-# 4) Open mixer for the target card (replace index)
-alsamixer -c 0
+# 4) Open mixer for the target card
+alsamixer
 
 # 5) Check KISS/AGW listener ports (replace placeholders)
 ss -ltnp | grep -E "PORT1|PORT2|PORT3"
@@ -270,16 +270,19 @@ id YOUR_USERNAME</code></pre>
       <section>
         <h2>Focused debug workflows</h2>
 
-        <h3>1) Service fails at startup</h3>
+        <h3>1) Service fails right after starting</h3>
         <pre><code>systemctl status direwolf
 journalctl -u direwolf -b --no-pager
 systemctl show direwolf -p ExecStart,User,Group,WorkingDirectory</code></pre>
         <p>
           Confirm the executable path and config file path are valid for the service account.
+          View the <code>journalctl</code> output for the first few lines of failure text. Review
+          the direwolf logs right at startup for errors opening or parsing the config file, or opening 
+          audio/PTT devices.
           On this site, many examples assume config files are in <code>/opt/direwolf/</code>.
         </p>
 
-        <h3>2) Audio capture/playback trouble</h3>
+        <h3>2a) Audio capture/playback trouble</h3>
         <pre><code>arecord -l
 aplay -l
       cat /proc/asound/cards
@@ -288,10 +291,13 @@ aplay -l
 arecord -D plughw:0,0 -f S16_LE -r 48000 -c 1 -d 5 /tmp/dw-test.wav
 aplay /tmp/dw-test.wav</code></pre>
         <p>
-          If this capture test fails, fix ALSA/device/permission problems first, then return to Dire Wolf.
+          If this capture test fails, there may be issues with the radio's output levels or the levels
+          on the USB audio device. Use <code>alsamixer</code> to check levels and mute state.
+          First ensure your radio levels are correct and audio/USB cables are connected correctly.
+          Then check your sound card's capture and playback levels (next step) and try the capture test again.
         </p>
 
-        <h3>2a) Check mute and levels with alsamixer</h3>
+        <h3>2b) Check mute and levels with alsamixer</h3>
         <pre><code># Open mixer for target card index
 alsamixer -c 0
 
