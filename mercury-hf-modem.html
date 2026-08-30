@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mercury HF Modem</title>
+    <style>
+      :root {
+        --bg: #f4efe6;
+        --surface: #fffaf0;
+        --ink: #1e2a2f;
+        --muted: #4c5a61;
+        --accent: #b14f2f;
+        --accent-2: #2f6f74;
+        --line: #d9ccba;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+        line-height: 1.6;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 8% 12%, #f0d6b6 0, transparent 22%),
+          radial-gradient(circle at 90% 18%, #d6ebe3 0, transparent 20%),
+          var(--bg);
+      }
+
+      main {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 2rem 1rem 3rem;
+      }
+
+      .hero {
+        background: linear-gradient(135deg, #f8f0e2, #eaf3ef);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 1.25rem;
+        margin-bottom: 1.25rem;
+      }
+
+      section {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-top: 1rem;
+      }
+
+      h1,
+      h2,
+      h3 {
+        line-height: 1.2;
+      }
+
+      h1 {
+        margin-top: 0;
+        color: #7b341f;
+      }
+
+      h2 {
+        margin-top: 1.8rem;
+      }
+
+      section h2 {
+        margin-top: 0;
+      }
+
+      p {
+        margin: 0.6rem 0;
+      }
+
+      a {
+        color: var(--accent-2);
+        font-weight: 600;
+      }
+
+      pre,
+      code {
+        font-family: "DejaVu Sans Mono", Menlo, Monaco, monospace;
+      }
+
+      pre {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 0.9rem;
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--surface);
+        border: 1px solid var(--line);
+      }
+
+      th,
+      td {
+        text-align: left;
+        border: 1px solid var(--line);
+        padding: 0.55rem;
+        vertical-align: top;
+      }
+
+      .badge {
+        display: inline-block;
+        background: #efe1ce;
+        border: 1px solid #cfb89b;
+        border-radius: 999px;
+        padding: 0.2rem 0.6rem;
+        font-size: 0.85rem;
+      }
+
+      .callout {
+        background: #eef6f4;
+        border-left: 4px solid var(--accent-2);
+        padding: 0.7rem 0.9rem;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p><a href="index.html">Back to WG0A main page</a></p>
+
+      <section class="hero">
+        <p class="badge">HF digital modes</p>
+        <h1>Mercury HF Modem</h1>
+        <p>
+          Mercury is a fully open-source HF data modem from Rhizomatica, built as an
+          alternative to closed-source options like VARA. WG0A runs a Winlink RMS gateway
+          mode over Mercury, giving operators an open protocol path for HF Winlink traffic.
+        </p>
+      </section>
+
+      <section>
+        <h2>What is Mercury?</h2>
+        <p>
+          Mercury is an open-source software modem for digital data communications over HF
+          radio, developed by <a href="https://www.rhizomatica.org/">Rhizomatica</a>. It was
+          created to provide a free, open alternative to proprietary HF modems, with a focus
+          on robust performance over noisy, low-bandwidth HF channels.
+        </p>
+        <p class="callout">
+          Because Mercury is open source, its protocol and code can be inspected, modified, and
+          improved by the community, unlike closed HF modem products.
+        </p>
+      </section>
+
+      <section>
+        <h2>Mercury at WG0A</h2>
+        <p>
+          WG0A runs a Mercury Winlink RMS gateway as one of several HF modem options offered
+          alongside Dire Wolf (AX.25/FX.25/IL2P) and ARDOP. Current station configuration:
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Port</th>
+              <th>Frequency</th>
+              <th>Mode</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>6</td>
+              <td>7.1013 / 14.1023 MHz USB</td>
+              <td>Mercury HF Modem</td>
+              <td>BW2750</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          This port is served through the <code>WG0A-10 / MSPRMS</code> Winlink Gateway service,
+          with band selection following the station's normal HF auto-switching schedule
+          (20m 12:00-00:00 UTC, 40m 00:00-12:00 UTC). See the full
+          <a href="https://wg0a.net:8443">WG0A node status page</a> for live port and service details.
+        </p>
+      </section>
+
+      <section>
+        <h2>VARA compatibility</h2>
+        <p>
+          Mercury exposes a VARA-compatible TCP TNC interface, so Winlink programs that already
+          know how to drive a VARA modem can drive Mercury the same way, with no protocol
+          changes on the Winlink side.
+          For Winlink Express or Pat Winlink clients, you would point the VARA configuration
+          at Mercury's address and ports, just like you would for a VARA modem.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Port</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>8300 (base port)</td>
+              <td>Control port &mdash; VARA-style text commands (<code>MYCALL</code>, <code>LISTEN</code>,
+                <code>CONNECT</code>, <code>BW2750</code>, etc.) and status lines.</td>
+            </tr>
+            <tr>
+              <td>8301 (base port + 1)</td>
+              <td>Data port &mdash; raw application payload for a connected session.</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="callout">
+          In practice, this means Winlink Express (or another Winlink client) can be configured
+          with a VARA HF session pointed at Mercury's control/data ports (typically
+          <code>127.0.0.1:8300</code> / <code>8301</code>) exactly as it would for the real VARA
+          modem software, and Mercury handles the RF side transparently.
+        </p>
+        <p>
+          Mercury also emits VARA-style asynchronous status lines such as <code>BUSY ON</code>/<code>BUSY OFF</code>,
+          <code>PENDING</code>, and <code>CONNECTED</code>, which is what lets existing VARA-aware
+          hosts like Winlink Express and BPQ32 hold off transmitting and react to link state
+          without any special-casing for Mercury.
+        </p>
+        <p>
+          <a href="https://github.com/Rhizomatica/mercury/blob/mercuryv2/docs/TNC.md">Mercury TNC command reference</a>
+          &mdash; the full VARA-compatible command/response set and port layout.
+        </p>
+      </section>
+
+      <section>
+        <h2>Setup guides and videos</h2>
+        <p>
+          <a href="https://youtu.be/sP-gkal-EPE">How to install Mercury open source HF modem on Linux & Windows (YouTube)</a>
+        </p>
+        <p>
+          <a href="https://youtu.be/SDeZhU51sz4">VARA Winlink Email Speeds With MERCURY HF! (YouTube)</a>
+        </p>
+        <p>
+          <a href="https://youtu.be/GQ9odnuUcQE">Winklink P2P over Mercury HF - R&D Demo for Preppers (YouTube)</a>
+        </p>
+      </section>
+
+      <section>
+        <h2>Key resources</h2>
+        <p>
+          <a href="https://github.com/Rhizomatica/mercury">Mercury source code (GitHub)</a>
+          &mdash; the modem implementation and build instructions.
+        </p>
+        <p>
+          <a href="https://www.rhizomatica.org/rhizomatica-releases-mercury-a-fully-open-source-modem-for-data-communications-on-hf/">Rhizomatica: Mercury release announcement</a>
+          &mdash; background on the project and its goals.
+        </p>
+        <p>
+          <a href="https://www.arrl.org/mercury">ARRL: Mercury overview</a>
+          &mdash; ARRL's coverage of the modem for amateur radio operators.
+        </p>
+        <p>
+          <a href="https://www.arnewsline.org/news-text/2026/5/14/open-source-software-modem-called-a-vara-replacement">Amateur Radio Newsline: open-source modem called a VARA replacement</a>
+          &mdash; news coverage framing Mercury as an open alternative to VARA.
+        </p>
+      </section>
+
+      <section>
+        <h2>Related WG0A notes</h2>
+        <p>
+          Mercury is one of several HF modems in use at this station; see also
+          <a href="direwolf-install-linux.html">Dire Wolf installation notes</a> and the
+          <a href="index.html">main page</a> for the full modem lineup.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
